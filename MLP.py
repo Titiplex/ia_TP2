@@ -5,6 +5,7 @@ import torchvision
 import torchvision.transforms as transforms
 import numpy as np
 
+
 class FashionMLP(nn.Module):
     def __init__(
             self,
@@ -15,14 +16,31 @@ class FashionMLP(nn.Module):
             activation1,
             activation2):
         super(FashionMLP, self).__init__()
-        
+
         # TODO
         # Créer un réseau de neurones MLP selon les paramètres d'entrée. Utilisez les couches de torch.nn
 
-        self.flatten = nn.Flatten() # Couche pour adapter l'entrée 28x28 en vecteur
+        self.flatten = nn.Flatten()  # Couche pour adapter l'entrée 28x28 en vecteur
+        self.activation1 = activation1
+        self.activation2 = activation2
+
+        self.fc1 = nn.Linear(input_size, h1_size)
+
+        if h2_size > 0:
+            self.fc2 = nn.Linear(h1_size, h2_size)
+            self.out = nn.Linear(h2_size, output_size)
+        else:
+            self.fc2 = None
+            self.out = nn.Linear(h1_size, output_size)
 
     def forward(self, x):
         # TODO
         # Implémentez le forward pass de votre réseau de neurones
-        logits = None
+        x = self.flatten(x)
+        x = self.activation1(self.fc1(x))
+
+        if self.fc2 is not None:
+            x = self.activation2(self.fc2(x))
+
+        logits = self.out(x)
         return logits
