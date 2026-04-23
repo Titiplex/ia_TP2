@@ -22,12 +22,22 @@ class Layer():
         # TODO initialiser la matrice de poids et le vecteur de biais avec des valeurs appropriées
         self.weights = np.random.randn(output_size, input_size) * 0.01
         self.biases = np.zeros(output_size)
-        self.input_structure = input_structure
+        if input_structure is None:
+            self.input_structure = np.ones((output_size, input_size))
+        else:
+            self.input_structure = np.asarray(input_structure)
+
+        self.neurons = [Neuron() for _ in range(output_size)]
 
     def __call__(self, x, activation):
         # TODO calculez le vecteur de sortie de la couche
         x = np.array(x).reshape(-1)
-        return activation(np.dot(self.weights, x) + self.biases)
+        masked_weights = self.weights * self.input_structure
+        outputs = []
+        for i, neuron in enumerate(self.neurons):
+            outputs.append(neuron(x, masked_weights[i], self.biases[i], activation))
+
+        return np.asarray(outputs)
 
 
 # Fonctions d'activation
@@ -37,7 +47,7 @@ def sigmoid(x):
 
 def tanh(x):
     # TODO
-    return np.tanh(x)
+    return np.tanh(np.asarray(x))
 
 
 def leaky_ReLu(x, alpha=0.01):
@@ -83,7 +93,11 @@ def cross_entropy(y_true, y_pred):
     epsilon = 1e-10
     y_true = np.asarray(y_true)
     y_pred = np.clip(np.asarray(y_pred), epsilon, 1.0)
-    return - np.sum(y_true * np.log(y_pred))
+
+    if y_true.ndim == 1:
+        return -np.sum(y_true * np.log(y_pred))
+
+    return -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
 
 
 def train(model, epochs, optimizer, criterion, train_loader, test_loader, device):

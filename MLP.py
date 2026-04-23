@@ -14,7 +14,8 @@ class FashionMLP(nn.Module):
             h2_size,
             output_size,
             activation1,
-            activation2):
+            activation2,
+            output_activation=None):
         super(FashionMLP, self).__init__()
 
         # TODO
@@ -25,13 +26,15 @@ class FashionMLP(nn.Module):
         self.activation2 = activation2
 
         self.fc1 = nn.Linear(input_size, h1_size)
+        self.fc2 = None
 
         if h2_size > 0:
             self.fc2 = nn.Linear(h1_size, h2_size)
             self.out = nn.Linear(h2_size, output_size)
         else:
-            self.fc2 = None
             self.out = nn.Linear(h1_size, output_size)
+
+        self.output_activation = output_activation
 
     def forward(self, x):
         # TODO
@@ -42,5 +45,9 @@ class FashionMLP(nn.Module):
         if self.fc2 is not None:
             x = self.activation2(self.fc2(x))
 
-        logits = self.out(x)
-        return logits
+        x = self.out(x)
+
+        if self.output_activation is not None:
+            x = self.output_activation(x)
+
+        return x
