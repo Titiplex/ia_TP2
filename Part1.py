@@ -14,7 +14,7 @@ class Neuron():
         # w : vecteur de poids pour ce neurone
         # b : biais (scalaire) pour ce neurone
         # TODO
-        return activation(np.dot(w, x) + b)
+        return activation(np.dot(np.asarray(w), np.asarray(x)) + b)
 
 
 class Layer():
@@ -32,7 +32,7 @@ class Layer():
 
 # Fonctions d'activation
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return 1 / (1 + np.exp(-np.asarray(x)))
 
 
 def tanh(x):
@@ -42,34 +42,48 @@ def tanh(x):
 
 def leaky_ReLu(x, alpha=0.01):
     # TODO
+    x = np.asarray(x)
     return np.where(x > 0, x, alpha * x)  # where more accurate considering the vector/matrix character of x
 
 
 def softmax(x):
     # TODO
-    return np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)))
+    x = np.asarray(x)
+
+    # Vecteur
+    if x.ndim == 1:
+        shifted = x - np.max(x)
+        exps = np.exp(shifted)
+        return exps / np.sum(exps)
+
+    # Matrix
+    shifted = x - np.max(x, axis=1, keepdims=True)
+    exps = np.exp(shifted)
+    return exps / np.sum(exps, axis=1, keepdims=True)
 
 
 # Fonctions de perte
 def MAE(y_true, y_pred):
     # TODO
-    return np.mean(np.abs(y_true - y_pred))
+    return np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred)))
 
 
 def MSE(y_true, y_pred):
     # TODO
-    return np.mean(np.pow(y_true - y_pred, 2))
+    return np.mean((np.asarray(y_true) - np.asarray(y_pred)) ** 2)
 
 
 def log_cosh(y_true, y_pred):
     # TODO ln(cosh(x))
-    return np.mean(np.log(np.cosh(y_pred - y_true)))
+    return np.mean(np.log(np.cosh(np.asarray(y_pred) - np.asarray(y_true))))
 
 
 def cross_entropy(y_true, y_pred):
     # TODO N'oubliez pas d'éviter la division par 0 avec un epsilon (1e-10). Assumez que y_true est un vecteur one-hot
     epsilon = 1e-10
-    return - np.sum(y_true * np.log(y_pred + epsilon))
+    y_true = np.asarray(y_true)
+    y_pred = np.clip(np.asarray(y_pred), epsilon, 1.0)
+    return - np.sum(y_true * np.log(y_pred))
 
 
 def train(model, epochs, optimizer, criterion, train_loader, test_loader, device):
@@ -132,7 +146,6 @@ def train(model, epochs, optimizer, criterion, train_loader, test_loader, device
                 # Calculer la perte
                 # Calculer les métriques d'évaluation
                 outputs = model(images)
-
                 loss = criterion(outputs, labels)
                 running_loss += loss.item()
 
@@ -145,6 +158,7 @@ def train(model, epochs, optimizer, criterion, train_loader, test_loader, device
         test_accuracy = 100 * correct / total
         test_accuracies.append(test_accuracy)
 
-        print(
-            f"Epoch [{epoch + 1}/{epochs}] | Train Loss: {avg_train_loss:.4f} | Test Loss: {avg_test_loss:.4f} | Train Accuracy: {train_accuracy:.2f} | Test Accuracy: {test_accuracy:.2f}%")
+        if (epoch + 1) % 5 == 0 or epoch == 0 or epoch == epochs - 1:
+            print(
+                f"Epoch [{epoch + 1}/{epochs}] | Train Loss: {avg_train_loss:.4f} | Test Loss: {avg_test_loss:.4f} | Train Accuracy: {train_accuracy:.2f} | Test Accuracy: {test_accuracy:.2f}%")
     return train_losses, test_losses, train_accuracies, test_accuracies
