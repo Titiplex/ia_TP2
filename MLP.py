@@ -22,32 +22,23 @@ class FashionMLP(nn.Module):
         # Créer un réseau de neurones MLP selon les paramètres d'entrée. Utilisez les couches de torch.nn
 
         self.flatten = nn.Flatten()  # Couche pour adapter l'entrée 28x28 en vecteur
-        self.activation1 = activation1
-        self.activation2 = activation2
-
-        self.fc1 = nn.Linear(input_size, h1_size)
-        self.fc2 = None
+        layers = [nn.Linear(input_size, h1_size), activation1]
 
         if h2_size > 0:
-            self.fc2 = nn.Linear(h1_size, h2_size)
-            self.out = nn.Linear(h2_size, output_size)
+            layers.append(nn.Linear(h1_size, h2_size))
+            layers.append(activation2)
+            layers.append(nn.Linear(h2_size, output_size))
         else:
-            self.out = nn.Linear(h1_size, output_size)
+            layers.append(nn.Linear(h1_size, output_size))
 
-        self.output_activation = output_activation
+        if output_activation is not None:
+            layers.append(output_activation)
+
+        self.network = nn.Sequential(*layers)
 
     def forward(self, x):
         # TODO
         # Implémentez le forward pass de votre réseau de neurones
         x = self.flatten(x)
-        x = self.activation1(self.fc1(x))
-
-        if self.fc2 is not None:
-            x = self.activation2(self.fc2(x))
-
-        x = self.out(x)
-
-        if self.output_activation is not None:
-            x = self.output_activation(x)
-
+        x = self.network(x)
         return x
